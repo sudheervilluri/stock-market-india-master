@@ -1,5 +1,5 @@
-var BSEAPI = require('./bse/index');
-var NSEAPI = require('./nse/index');
+var BSEAPI = require('./src/bse/index');
+var NSEAPI = require('./src/nse/index');
 
 var API = {
 	BSE: BSEAPI,
