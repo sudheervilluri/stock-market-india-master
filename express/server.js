@@ -1,41 +1,90 @@
-'use strict';
-const express = require('express');
-const path = require('path');
-const serverless = require('serverless-http');
-const app = express();
-const morgan = require('morgan');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+/* Express App */
+import express from 'express'
+import cors from 'cors'
+import morgan from 'morgan'
+import bodyParser from 'body-parser'
+import compression from 'compression'
+import customLogger from '../utils/logger'
 
-const router = express.Router();
-router.get('/', (req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html' });
-  res.write('<h1>Hello from Express.js!</h1>');
-  res.end();
-});
-router.get('/users', (req, res) => {
-  res.json({
-    users: [
-      {
-        name: 'steve',
-      },
-      {
-        name: 'joe',
-      },
-    ],
+/* My express App */
+export default function expressApp(functionName) {
+  const app = express()
+  const router = express.Router()
+
+  // gzip responses
+  router.use(compression())
+
+  // Set router base path for local dev
+  const routerBasePath = process.env.NODE_ENV === 'dev' ? `/${functionName}` : `/.netlify/functions/${functionName}/`
+
+  /* define routes */
+  router.get('/', (req, res) => {
+    const html = `
+    <html>
+      <head>
+        <style>
+          body {
+            padding: 30px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Express via '${functionName}' ⊂◉‿◉つ</h1>
+        <p>I'm using Express running via a <a href='https://www.netlify.com/docs/functions/' target='_blank'>Netlify Function</a>.</p>
+        <p>Choose a route:</p>
+        <div>
+          <a href='/.netlify/functions/${functionName}/users'>View /users route</a>
+        </div>
+        <div>
+          <a href='/.netlify/functions/${functionName}/hello'>View /hello route</a>
+        </div>
+        <br/>
+        <br/>
+        <div>
+          <a href='/'>
+            Go back to demo homepage
+          </a>
+        </div>
+        <br/>
+        <br/>
+        <div>
+          <a href='https://github.com/DavidWells/netlify-functions-express' target='_blank'>
+            See the source code on github
+          </a>
+        </div>
+      </body>
+    </html>
+  `
+    res.send(html)
   })
-})
-router.post('/', (req, res) => res.json({ postBody: req.body }));
 
-// Attach logger
-app.use(morgan(customLogger))
+  router.get('/users', (req, res) => {
+    res.json({
+      users: [
+        {
+          name: 'steve',
+        },
+        {
+          name: 'joe',
+        },
+      ],
+    })
+  })
 
-// Setup routes
-app.use(routerBasePath, router)
+  router.get('/hello/', function(req, res) {
+    res.send('hello world')
+  })
 
-// Apply express middlewares
-router.use(cors())
-router.use(bodyParser.json())
-router.use(bodyParser.urlencoded({ extended: true }))
+  // Attach logger
+  app.use(morgan(customLogger))
 
-return app
+  // Setup routes
+  app.use(routerBasePath, router)
+
+  // Apply express middlewares
+  router.use(cors())
+  router.use(bodyParser.json())
+  router.use(bodyParser.urlencoded({ extended: true }))
+
+  return app
+}
