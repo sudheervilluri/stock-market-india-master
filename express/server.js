@@ -3,6 +3,8 @@ const express = require('express');
 const path = require('path');
 const serverless = require('serverless-http');
 const app = express();
+const morgan = require('morgan');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const router = express.Router();
@@ -11,12 +13,29 @@ router.get('/', (req, res) => {
   res.write('<h1>Hello from Express.js!</h1>');
   res.end();
 });
-router.get('/another', (req, res) => res.json({ route: req.originalUrl }));
+router.get('/users', (req, res) => {
+  res.json({
+    users: [
+      {
+        name: 'steve',
+      },
+      {
+        name: 'joe',
+      },
+    ],
+  })
+})
 router.post('/', (req, res) => res.json({ postBody: req.body }));
 
-app.use(bodyParser.json());
-app.use('/.netlify/functions/server', router);  // path must route to lambda
-app.use('/', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
+// Attach logger
+app.use(morgan(customLogger))
 
-module.exports = app;
-module.exports.handler = serverless(app);
+// Setup routes
+app.use(routerBasePath, router)
+
+// Apply express middlewares
+router.use(cors())
+router.use(bodyParser.json())
+router.use(bodyParser.urlencoded({ extended: true }))
+
+return app
